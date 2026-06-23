@@ -222,6 +222,15 @@
       <input type="text" id="foodName" placeholder="例: 醤油、牛乳、キャベツ..." autocomplete="off">
     </div>
     <div class="field">
+      <label>個数</label>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button type="button" onclick="changeQty(-1)" style="width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">−</button>
+        <span id="qtyDisplay" style="font-size:24px;font-weight:700;min-width:40px;text-align:center;">1</span>
+        <button type="button" onclick="changeQty(1)" style="width:44px;height:44px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;">＋</button>
+        <span style="font-size:14px;color:var(--muted);">個</span>
+      </div>
+    </div>
+    <div class="field">
       <label>期限の種類</label>
       <div class="type-toggle">
         <div class="type-btn active" id="typeDate" onclick="setExpiryType('date')">年月日</div>
@@ -464,7 +473,19 @@ function setExpiryType(t) {
   document.getElementById('monthInput').style.display = t==='month' ? '' : 'none';
 }
 
+let currentQty = 1;
+
+function changeQty(delta) {
+  currentQty = Math.max(1, Math.min(99, currentQty + delta));
+  document.getElementById('qtyDisplay').textContent = currentQty;
+}
+
 function quickName(name) { document.getElementById('foodName').value = name; document.getElementById('foodName').focus(); }
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;
+}
 
 function addItem() {
   const name = document.getElementById('foodName').value.trim();
@@ -482,12 +503,15 @@ function addItem() {
     if (!y||!m) { showToast('年月を入力してください'); return; }
     expiry = `${y}-${m}`;
   }
-  items.push({ id:uid(), name, expiry, expiryType:currentExpiryType, category:selectedCat, addedAt:Date.now() });
+  const purchasedAt = Date.now();
+  items.push({ id:uid(), name, expiry, expiryType:currentExpiryType, category:selectedCat, qty:currentQty, addedAt:purchasedAt, purchasedAt });
   setSyncDot(true);
   save();
   render();
   document.getElementById('foodName').value = '';
   ['expYear','expMonth','expDay','expYear2','expMonth2'].forEach(id => { document.getElementById(id).value=''; });
+  currentQty = 1;
+  document.getElementById('qtyDisplay').textContent = '1';
   showToast('追加したよ愛美さん❤️');
   setTimeout(() => setSyncDot(false), 1500);
   switchTab('gantt');
@@ -498,8 +522,12 @@ function openModal(id) {
   selectedId = id;
   const item = items.find(i => i.id===id);
   if (!item) return;
-  document.getElementById('modalTitle').textContent = item.name;
-  document.getElementById('modalSub').textContent = formatExpiry(item) + '　' + daysLabel(daysLeft(item));
+  const qty = item.qty || 1;
+  document.getElementById('modalTitle').textContent = item.name + (qty > 1 ? ` ×${qty}` : '');
+  const purchased = item.purchasedAt ? `購入日: ${formatDate(item.purchasedAt)}　` : '';
+  document.getElementById('modalSub').textContent = purchased + formatExpiry(item) + '　' + daysLabel(daysLeft(item));
+  const doneBtn = document.querySelector('.modal-btn-done');
+  doneBtn.textContent = qty > 1 ? `✅ 1個使った（残り${qty-1}個）` : '✅ 使い切った！（消費済み）';
   document.getElementById('modalOverlay').classList.add('open');
 }
 
@@ -513,9 +541,16 @@ function closeModal(e) {
 function markDone() {
   const item = items.find(i => i.id===selectedId);
   if (!item) return;
-  items = items.filter(i => i.id!==selectedId);
-  setSyncDot(true); save(); render(); closeModal();
-  showToast(`「${item.name}」を消費しました 🎉`);
+  const qty = item.qty || 1;
+  if (qty > 1) {
+    item.qty = qty - 1;
+    setSyncDot(true); save(); render(); closeModal();
+    showToast(`「${item.name}」残り${item.qty}個`);
+  } else {
+    items = items.filter(i => i.id!==selectedId);
+    setSyncDot(true); save(); render(); closeModal();
+    showToast(`「${item.name}」を使い切りました 🎉`);
+  }
   setTimeout(() => setSyncDot(false), 1500);
 }
 
@@ -576,8 +611,9 @@ function renderGantt() {
       const pct  = Math.min(Math.max(days/chartMax*100, 2), 100);
       const cat  = catInfo(item.category);
       const label = days >= 3 ? daysLabel(days) : '';
+      const qty = item.qty || 1;
       return `<div class="gantt-row" onclick="openModal('${item.id}')">
-        <div class="gantt-name" title="${item.name}">${item.name}</div>
+        <div class="gantt-name" title="${item.name}">${item.name}${qty > 1 ? ` <span style="font-size:10px;color:var(--primary);">×${qty}</span>` : ''}</div>
         <div class="gantt-bar-track"><div class="gantt-bar ${cls}" style="width:${pct}%">${label}</div></div>
         <div class="gantt-days ${cls}">${daysLabel(days)}</div>
         <div class="gantt-cat-dot" style="background:${cat.color}"></div>
@@ -595,10 +631,13 @@ function renderList() {
     const days = daysLeft(item);
     const cls  = colorClass(days);
     const cat  = catInfo(item.category);
+    const qty  = item.qty || 1;
+    const purchased = item.purchasedAt ? `購入日: ${formatDate(item.purchasedAt)}` : '';
     return `<div class="item-card ${cls}" onclick="openModal('${item.id}')">
       <div class="item-info">
-        <div class="item-name">${item.name}</div>
+        <div class="item-name">${item.name} ${qty > 1 ? `<span style="font-size:13px;color:var(--primary);font-weight:700;">×${qty}</span>` : ''}</div>
         <div class="item-expiry">${formatExpiry(item)}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">${purchased}</div>
         <span class="item-cat-badge" style="background:${cat.bg};color:${cat.color}">${cat.label}</span>
       </div>
       <div><div class="item-days ${cls}">${daysLabel(days)}</div></div>
