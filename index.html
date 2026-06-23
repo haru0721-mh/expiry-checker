@@ -488,7 +488,7 @@ function addItem() {
   render();
   document.getElementById('foodName').value = '';
   ['expYear','expMonth','expDay','expYear2','expMonth2'].forEach(id => { document.getElementById(id).value=''; });
-  showToast(`「${name}」を追加したよ愛美さん❤️`);
+  showToast('追加したよ愛美さん❤️');
   setTimeout(() => setSyncDot(false), 1500);
   switchTab('gantt');
 }
