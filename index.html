@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6366f1">
+<link rel="manifest" href="manifest.json">
 <title>賞味期限チェッカー</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -15,23 +17,18 @@
   }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 100px; }
 
-  /* HEADER */
   .header { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; padding: 16px 20px 12px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(99,102,241,.3); }
+  .header-row { display: flex; align-items: center; justify-content: space-between; }
   .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
   .header-sub { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+  .notif-btn { background: rgba(255,255,255,.2); border: none; color: #fff; border-radius: 20px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .notif-btn.on { background: rgba(255,255,255,.35); }
 
-  /* TABS */
-  .tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 64px; z-index: 90; }
-  .tab { flex: 1; padding: 12px 4px; text-align: center; font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 3px solid transparent; cursor: pointer; transition: all .2s; }
-  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
-
-  /* SECTIONS */
   .section { display: none; }
   .section.active { display: block; }
 
-  /* ADD FORM */
   .add-card { margin: 16px; background: var(--card); border-radius: 16px; padding: 20px; box-shadow: 0 1px 8px rgba(0,0,0,.06); }
-  .add-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: var(--text); }
+  .add-card h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .5px; }
   .field input, .field select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; background: var(--bg); color: var(--text); appearance: none; -webkit-appearance: none; outline: none; transition: border-color .2s; }
@@ -43,8 +40,10 @@
   .date-inputs .field { flex: 1; margin-bottom: 0; }
   .btn-add { width: 100%; padding: 14px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; transition: transform .1s, background .2s; margin-top: 4px; }
   .btn-add:active { transform: scale(0.97); background: var(--primary-dark); }
+  .category-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+  .cat-btn { padding: 6px 12px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; background: var(--bg); color: var(--muted); transition: all .2s; }
+  .cat-btn.active { border-color: var(--primary); background: #eef2ff; color: var(--primary); font-weight: 700; }
 
-  /* SUMMARY BADGES */
   .summary { display: flex; gap: 8px; padding: 12px 16px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .summary::-webkit-scrollbar { display: none; }
   .badge { flex: 0 0 auto; padding: 8px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 5px; }
@@ -54,19 +53,19 @@
   .badge-green { background: #dcfce7; color: #16a34a; }
   .badge-num { font-size: 16px; }
 
-  /* GANTT */
   .gantt-wrap { margin: 0 16px 16px; background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 8px rgba(0,0,0,.06); }
   .gantt-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
   .gantt-header h2 { font-size: 14px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
-  .gantt-axis { display: flex; padding: 6px 16px 6px calc(16px + 80px); gap: 0; border-bottom: 1px solid var(--border); }
+  .gantt-axis { display: flex; padding: 6px 16px 6px calc(16px + 80px); border-bottom: 1px solid var(--border); }
   .gantt-axis-label { flex: 1; text-align: center; font-size: 10px; color: var(--muted); font-weight: 600; }
   .gantt-row { display: flex; align-items: center; padding: 10px 16px; border-bottom: 1px solid var(--border); gap: 10px; cursor: pointer; transition: background .15s; }
   .gantt-row:last-child { border-bottom: none; }
   .gantt-row:active { background: var(--bg); }
   .gantt-name { width: 80px; min-width: 80px; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .gantt-cat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
   .gantt-bar-track { flex: 1; height: 28px; background: #f1f5f9; border-radius: 8px; overflow: hidden; position: relative; }
-  .gantt-bar { height: 100%; border-radius: 8px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.95); min-width: 4px; transition: opacity .2s; position: relative; overflow: hidden; }
-  .gantt-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(255,255,255,.2), transparent); }
+  .gantt-bar { height: 100%; border-radius: 8px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; font-weight: 700; color: rgba(255,255,255,.95); min-width: 4px; transition: opacity .2s; }
+  .gantt-bar::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to bottom, rgba(255,255,255,.2), transparent); pointer-events: none; }
   .gantt-bar.red { background: var(--red); }
   .gantt-bar.orange { background: var(--orange); }
   .gantt-bar.yellow { background: var(--yellow); }
@@ -76,13 +75,7 @@
   .gantt-days.orange { color: var(--orange); }
   .gantt-days.yellow { color: var(--yellow); }
   .gantt-days.green { color: var(--green); }
-  .gantt-today-line { position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.6); }
-  .gantt-check { width: 28px; min-width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; }
-  .empty-state { padding: 40px 20px; text-align: center; color: var(--muted); }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 14px; line-height: 1.6; }
 
-  /* ITEM LIST */
   .item-list { margin: 0 16px 16px; }
   .item-card { background: var(--card); border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.05); display: flex; align-items: center; gap: 12px; cursor: pointer; transition: all .2s; border-left: 4px solid transparent; }
   .item-card.red { border-left-color: var(--red); }
@@ -93,6 +86,7 @@
   .item-info { flex: 1; }
   .item-name { font-size: 16px; font-weight: 700; }
   .item-expiry { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .item-cat-badge { display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 10px; margin-top: 4px; font-weight: 600; }
   .item-days { font-size: 13px; font-weight: 700; }
   .item-days.red { color: var(--red); }
   .item-days.orange { color: var(--orange); }
@@ -100,67 +94,72 @@
   .item-days.green { color: var(--green); }
   .check-btn { width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; background: var(--bg); }
 
-  /* RECIPES */
   .recipe-section { margin: 0 16px 16px; }
   .recipe-hint { background: #eef2ff; border-radius: 14px; padding: 14px 16px; margin-bottom: 14px; font-size: 13px; color: var(--primary-dark); line-height: 1.5; }
   .recipe-card { background: var(--card); border-radius: 14px; padding: 16px; margin-bottom: 10px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
   .recipe-name { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
   .recipe-match { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
   .recipe-tag { padding: 3px 10px; background: #dcfce7; color: #16a34a; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .recipe-tag.condiment { background: #fef3c7; color: #d97706; }
   .recipe-tag.missing { background: #f1f5f9; color: var(--muted); }
   .recipe-desc { font-size: 13px; color: var(--muted); line-height: 1.5; }
   .recipe-score { font-size: 11px; font-weight: 700; color: var(--primary); float: right; background: #eef2ff; padding: 2px 8px; border-radius: 10px; }
+  .recipe-filter { display: flex; gap: 8px; margin-bottom: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 4px; }
+  .recipe-filter::-webkit-scrollbar { display: none; }
+  .filter-btn { flex: 0 0 auto; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--card); color: var(--muted); white-space: nowrap; }
+  .filter-btn.active { border-color: var(--primary); background: #eef2ff; color: var(--primary); }
 
-  /* BOTTOM NAV */
   .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; padding: 8px 0 max(8px, env(safe-area-inset-bottom)); box-shadow: 0 -2px 12px rgba(0,0,0,.06); z-index: 200; }
   .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px; cursor: pointer; color: var(--muted); font-size: 10px; font-weight: 600; transition: color .2s; }
   .nav-item.active { color: var(--primary); }
   .nav-icon { font-size: 22px; line-height: 1; }
 
-  /* TOAST */
-  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; opacity: 0; transition: all .3s; z-index: 1000; white-space: nowrap; pointer-events: none; }
+  .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1e293b; color: #fff; padding: 12px 20px; border-radius: 100px; font-size: 14px; font-weight: 600; opacity: 0; transition: all .3s; z-index: 1000; white-space: nowrap; pointer-events: none; max-width: 90vw; text-align: center; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-  /* MODAL */
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 500; display: none; align-items: flex-end; }
   .modal-overlay.open { display: flex; }
-  .modal { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-height: 60vh; overflow-y: auto; }
-  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px; width: 100%; }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
   .modal-btn { width: 100%; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; margin-bottom: 8px; }
   .modal-btn-done { background: #dcfce7; color: #16a34a; }
   .modal-btn-delete { background: #fee2e2; color: #dc2626; }
   .modal-btn-cancel { background: var(--bg); color: var(--muted); }
+
+  .alert-banner { margin: 12px 16px 0; border-radius: 14px; padding: 14px 16px; }
+  .alert-banner.expired { background: #fee2e2; border-left: 4px solid var(--red); }
+  .alert-banner.urgent { background: #ffedd5; border-left: 4px solid var(--orange); }
+  .alert-banner-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+  .alert-banner.expired .alert-banner-title { color: #dc2626; }
+  .alert-banner.urgent .alert-banner-title { color: #ea580c; }
+  .alert-item { font-size: 13px; line-height: 1.8; }
+
+  .empty-state { padding: 40px 20px; text-align: center; color: var(--muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; line-height: 1.6; }
 </style>
 </head>
 <body>
 
 <div class="header">
-  <h1>🥦 賞味期限チェッカー</h1>
+  <div class="header-row">
+    <h1>🥦 賞味期限チェッカー</h1>
+    <button class="notif-btn" id="notifBtn" onclick="toggleNotification()">🔔 通知</button>
+  </div>
   <div class="header-sub" id="headerSub">食材を管理して無駄をなくそう</div>
 </div>
 
-<!-- BOTTOM NAV -->
 <div class="bottom-nav">
-  <div class="nav-item active" onclick="switchTab('gantt')" id="nav-gantt">
-    <div class="nav-icon">📊</div>
-    <div>チャート</div>
-  </div>
-  <div class="nav-item" onclick="switchTab('list')" id="nav-list">
-    <div class="nav-icon">🥕</div>
-    <div>一覧</div>
-  </div>
-  <div class="nav-item" onclick="switchTab('add')" id="nav-add">
-    <div class="nav-icon">➕</div>
-    <div>追加</div>
-  </div>
-  <div class="nav-item" onclick="switchTab('recipe')" id="nav-recipe">
-    <div class="nav-icon">👨‍🍳</div>
-    <div>レシピ</div>
-  </div>
+  <div class="nav-item active" onclick="switchTab('gantt')" id="nav-gantt"><div class="nav-icon">📊</div><div>チャート</div></div>
+  <div class="nav-item" onclick="switchTab('list')" id="nav-list"><div class="nav-icon">🥕</div><div>一覧</div></div>
+  <div class="nav-item" onclick="switchTab('add')" id="nav-add"><div class="nav-icon">➕</div><div>追加</div></div>
+  <div class="nav-item" onclick="switchTab('recipe')" id="nav-recipe"><div class="nav-icon">👨‍🍳</div><div>レシピ</div></div>
 </div>
 
-<!-- TAB: GANTT -->
+<!-- GANTT TAB -->
 <div class="section active" id="section-gantt">
+  <div id="alertBanners"></div>
   <div class="summary" id="summary"></div>
   <div class="gantt-wrap">
     <div class="gantt-header"><h2>📅 賞味期限タイムライン</h2></div>
@@ -168,18 +167,22 @@
   </div>
 </div>
 
-<!-- TAB: LIST -->
+<!-- LIST TAB -->
 <div class="section" id="section-list">
   <div class="item-list" id="itemList"></div>
 </div>
 
-<!-- TAB: ADD -->
+<!-- ADD TAB -->
 <div class="section" id="section-add">
   <div class="add-card">
-    <h2>🛒 食材を追加</h2>
+    <h2>🛒 食材・調味料を追加</h2>
     <div class="field">
-      <label>食材名</label>
-      <input type="text" id="foodName" placeholder="例: 牛乳、キャベツ、卵..." autocomplete="off">
+      <label>カテゴリ</label>
+      <div class="category-row" id="catRow"></div>
+    </div>
+    <div class="field">
+      <label>名前</label>
+      <input type="text" id="foodName" placeholder="例: 醤油、オリーブオイル、牛乳..." autocomplete="off">
     </div>
     <div class="field">
       <label>期限の種類</label>
@@ -190,58 +193,30 @@
     </div>
     <div id="dateInput">
       <div class="date-inputs">
-        <div class="field">
-          <label>年</label>
-          <input type="number" id="expYear" placeholder="2026" min="2024" max="2030">
-        </div>
-        <div class="field">
-          <label>月</label>
-          <input type="number" id="expMonth" placeholder="7" min="1" max="12">
-        </div>
-        <div class="field">
-          <label>日</label>
-          <input type="number" id="expDay" placeholder="31" min="1" max="31">
-        </div>
+        <div class="field"><label>年</label><input type="number" id="expYear" placeholder="2026" min="2024" max="2035"></div>
+        <div class="field"><label>月</label><input type="number" id="expMonth" placeholder="7" min="1" max="12"></div>
+        <div class="field"><label>日</label><input type="number" id="expDay" placeholder="31" min="1" max="31"></div>
       </div>
     </div>
     <div id="monthInput" style="display:none;">
       <div class="date-inputs">
-        <div class="field">
-          <label>年</label>
-          <input type="number" id="expYear2" placeholder="2026" min="2024" max="2030">
-        </div>
-        <div class="field">
-          <label>月</label>
-          <input type="number" id="expMonth2" placeholder="7" min="1" max="12">
-        </div>
+        <div class="field"><label>年</label><input type="number" id="expYear2" placeholder="2026" min="2024" max="2035"></div>
+        <div class="field"><label>月</label><input type="number" id="expMonth2" placeholder="7" min="1" max="12"></div>
       </div>
     </div>
     <button class="btn-add" onclick="addItem()">＋ 追加する</button>
   </div>
-  <!-- Quick add examples -->
   <div class="add-card" style="margin-top:0;">
-    <h2>⚡ よく使う食材</h2>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;">
-      <div onclick="quickName('牛乳')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🥛 牛乳</div>
-      <div onclick="quickName('卵')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🥚 卵</div>
-      <div onclick="quickName('豆腐')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">豆腐</div>
-      <div onclick="quickName('キャベツ')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🥬 キャベツ</div>
-      <div onclick="quickName('にんじん')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🥕 にんじん</div>
-      <div onclick="quickName('玉ねぎ')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🧅 玉ねぎ</div>
-      <div onclick="quickName('じゃがいも')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🥔 じゃがいも</div>
-      <div onclick="quickName('鶏肉')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🍗 鶏肉</div>
-      <div onclick="quickName('豚肉')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🥩 豚肉</div>
-      <div onclick="quickName('ほうれん草')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🌿 ほうれん草</div>
-      <div onclick="quickName('もやし')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">もやし</div>
-      <div onclick="quickName('きのこ')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">🍄 きのこ</div>
-    </div>
+    <h2>⚡ クイック追加</h2>
+    <div id="quickButtons" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px;"></div>
   </div>
 </div>
 
-<!-- TAB: RECIPE -->
+<!-- RECIPE TAB -->
 <div class="section" id="section-recipe">
   <div class="recipe-section">
-    <div class="recipe-hint">🧑‍🍳 今ある食材から作れるレシピを提案します。<br>使いかけの食材を消費するのに便利です！</div>
+    <div class="recipe-hint" id="recipeHint">🧑‍🍳 今ある食材から作れるレシピを提案します。</div>
+    <div class="recipe-filter" id="recipeFilter"></div>
     <div id="recipeList"></div>
   </div>
 </div>
@@ -250,45 +225,151 @@
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
     <h3 id="modalTitle"></h3>
-    <div id="modalExpiry" style="font-size:13px;color:var(--muted);margin-bottom:16px;"></div>
+    <div class="modal-sub" id="modalSub"></div>
     <button class="modal-btn modal-btn-done" onclick="markDone()">✅ 使い切った！（消費済み）</button>
     <button class="modal-btn modal-btn-delete" onclick="deleteItem()">🗑️ 削除する</button>
     <button class="modal-btn modal-btn-cancel" onclick="closeModal()">キャンセル</button>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────
-let items = JSON.parse(localStorage.getItem('expiryItems') || '[]');
+// ── CATEGORIES ────────────────────────────────────────
+const CATEGORIES = [
+  { id: 'veggie',    label: '🥦 野菜', color: '#16a34a', bg: '#dcfce7' },
+  { id: 'meat',      label: '🥩 肉・魚', color: '#dc2626', bg: '#fee2e2' },
+  { id: 'dairy',     label: '🥛 乳製品・卵', color: '#2563eb', bg: '#dbeafe' },
+  { id: 'condiment', label: '🧂 調味料', color: '#d97706', bg: '#fef3c7' },
+  { id: 'other',     label: '📦 その他', color: '#7c3aed', bg: '#ede9fe' },
+];
+
+const CAT_DOT_COLORS = {
+  veggie: '#16a34a', meat: '#dc2626', dairy: '#2563eb', condiment: '#d97706', other: '#7c3aed'
+};
+
+const QUICK_ITEMS = {
+  veggie:    ['キャベツ','にんじん','玉ねぎ','じゃがいも','ほうれん草','もやし','なす','ピーマン','大根','きのこ','長ねぎ','ブロッコリー','トマト','ニラ','ごぼう','白菜','小松菜','アスパラ'],
+  meat:      ['鶏肉','豚肉','牛肉','ひき肉','ソーセージ','ベーコン','鮭','サバ缶','ツナ缶','えび','あさり','豚バラ','鶏もも','鶏むね'],
+  dairy:     ['牛乳','卵','豆腐','納豆','チーズ','ヨーグルト','バター','生クリーム','豆乳'],
+  condiment: ['醤油','みりん','酒','砂糖','塩','酢','味噌','ケチャップ','マヨネーズ','ソース','オリーブオイル','ごま油','めんつゆ','コンソメ','鶏ガラスープ','ポン酢','白だし','料理酒','みそ','豆板醤','オイスターソース','ナンプラー','カレールー','片栗粉','小麦粉','パン粉'],
+  other:     ['ご飯','パスタ','うどん','そば','食パン','豆缶','コーン缶','トマト缶','こんにゃく','春雨','しらたき'],
+};
+
+// ── RECIPE DATABASE ───────────────────────────────────
+// main: 主食材（マッチでスコア+2）, sub: 副食材（+1）, condiments: 調味料（+0.5, 黄色表示）
+const RECIPES = [
+  { name:'野菜炒め', emoji:'🥘', main:['キャベツ','もやし','豚肉','鶏肉'], sub:['にんじん','ピーマン','玉ねぎ','ニラ','長ねぎ'], condiments:['醤油','ごま油','オイスターソース','塩','酒'], desc:'冷蔵庫の野菜をまとめて消費。ごま油と醤油で炒めるだけ。' },
+  { name:'肉じゃが', emoji:'🍲', main:['じゃがいも','玉ねぎ','牛肉','豚肉'], sub:['にんじん','糸こんにゃく'], condiments:['醤油','みりん','砂糖','酒'], desc:'定番の煮物。甘辛味でご飯が進む。' },
+  { name:'カレーライス', emoji:'🍛', main:['じゃがいも','にんじん','玉ねぎ'], sub:['鶏肉','豚肉','牛肉','なす','ブロッコリー'], condiments:['カレールー','バター'], desc:'野菜たっぷりで栄養満点。作り置きにも最適。' },
+  { name:'味噌汁', emoji:'🍵', main:['豆腐','大根','わかめ'], sub:['きのこ','ほうれん草','なす','長ねぎ','小松菜','もやし','玉ねぎ','じゃがいも'], condiments:['味噌','白だし','めんつゆ'], desc:'余り野菜を何でも入れてOK。毎日飲める定番汁。' },
+  { name:'卵炒飯', emoji:'🍳', main:['卵','ご飯'], sub:['長ねぎ','ベーコン','ソーセージ','ハム','にんじん'], condiments:['醤油','ごま油','塩'], desc:'卵と余りご飯で手軽に。冷蔵庫の整理に最適。' },
+  { name:'ポトフ', emoji:'🫕', main:['じゃがいも','にんじん','玉ねぎ','キャベツ'], sub:['ソーセージ','豚肉','ブロッコリー','大根'], condiments:['コンソメ','塩'], desc:'大きく切った野菜をコンソメで煮込むだけ。体温まる。' },
+  { name:'豚汁', emoji:'🍲', main:['大根','豚肉','にんじん'], sub:['じゃがいも','玉ねぎ','ごぼう','豆腐','こんにゃく','長ねぎ'], condiments:['味噌','ごま油','酒'], desc:'根菜と豚肉たっぷりの味噌汁。寒い日の定番。' },
+  { name:'オムレツ', emoji:'🍳', main:['卵','牛乳'], sub:['ほうれん草','キャベツ','ベーコン','チーズ','玉ねぎ','トマト'], condiments:['バター','塩'], desc:'卵と牛乳で作る簡単オムレツ。具材は自由自在。' },
+  { name:'親子丼', emoji:'🍜', main:['鶏肉','卵','玉ねぎ'], sub:['長ねぎ'], condiments:['醤油','みりん','砂糖','めんつゆ'], desc:'鶏肉と卵の定番丼。甘辛だれがご飯に合う。' },
+  { name:'コールスロー', emoji:'🥗', main:['キャベツ','にんじん'], sub:['コーン缶'], condiments:['マヨネーズ','酢','砂糖','塩'], desc:'キャベツとにんじんをマヨネーズで和えるだけ。大量消費に。' },
+  { name:'豚バラ大根', emoji:'🍲', main:['大根','豚肉'], sub:['長ねぎ'], condiments:['醤油','みりん','砂糖','酒','ごま油'], desc:'大根と豚肉を甘辛に煮込む。大根消費の定番。' },
+  { name:'きのこパスタ', emoji:'🍝', main:['きのこ','パスタ'], sub:['ベーコン','ほうれん草'], condiments:['オリーブオイル','醤油','バター','ニンニク'], desc:'きのこをバターとニンニクで炒める和風パスタ。' },
+  { name:'ナポリタン', emoji:'🍝', main:['パスタ','玉ねぎ','ピーマン'], sub:['ベーコン','ソーセージ','にんじん'], condiments:['ケチャップ','オリーブオイル','バター','塩'], desc:'ケチャップベースで子どもも大好き。余り野菜で作れる。' },
+  { name:'チャンプルー', emoji:'🥗', main:['豆腐','卵'], sub:['もやし','ニラ','キャベツ','ツナ缶','豚肉'], condiments:['醤油','ごま油','塩','鶏ガラスープ'], desc:'豆腐と野菜を炒める沖縄料理風。豆腐消費に最適。' },
+  { name:'ほうれん草のお浸し', emoji:'🌿', main:['ほうれん草'], sub:['小松菜'], condiments:['醤油','めんつゆ','ごま'], desc:'茹でて醤油と鰹節をかけるだけ。葉物大量消費に。' },
+  { name:'鶏のから揚げ', emoji:'🍗', main:['鶏肉'], sub:[], condiments:['醤油','酒','みりん','片栗粉','ごま油'], desc:'醤油・みりん・ニンニク・生姜で下味をつけて揚げる。' },
+  { name:'スープカレー', emoji:'🍛', main:['じゃがいも','にんじん','玉ねぎ','鶏肉'], sub:['なす','ピーマン','ブロッコリー','トマト'], condiments:['カレールー','コンソメ','ごま油'], desc:'野菜を素揚げしてカレースープに。野菜の大量消費に。' },
+  { name:'にんじんしりしり', emoji:'🥕', main:['にんじん','卵'], sub:['ツナ缶'], condiments:['ごま油','醤油','塩'], desc:'沖縄料理。にんじん千切りを炒める。大量消費に。' },
+  { name:'ハッシュドポテト', emoji:'🥔', main:['じゃがいも'], sub:[], condiments:['バター','塩','小麦粉'], desc:'すりおろして焼くだけ。じゃがいも消費に最適。' },
+  { name:'麻婆豆腐', emoji:'🍲', main:['豆腐','ひき肉'], sub:['長ねぎ'], condiments:['豆板醤','醤油','ごま油','鶏ガラスープ','砂糖','酒','片栗粉'], desc:'ピリ辛で食欲増進。豆腐と少量のひき肉で作れる。' },
+  { name:'回鍋肉', emoji:'🥘', main:['豚肉','キャベツ','ピーマン'], sub:['長ねぎ'], condiments:['豆板醤','オイスターソース','醤油','みりん','ごま油'], desc:'キャベツと豚肉の甘辛炒め。ご飯が進む一品。' },
+  { name:'豆腐ステーキ', emoji:'🍱', main:['豆腐'], sub:['きのこ','長ねぎ'], condiments:['醤油','みりん','ごま油','砂糖'], desc:'豆腐を焼いて和風ソースをかける。ヘルシーで満足感あり。' },
+  { name:'サバの味噌煮', emoji:'🐟', main:['サバ缶'], sub:['長ねぎ','生姜'], condiments:['味噌','みりん','砂糖','酒'], desc:'缶詰を使って簡単に作れる和食の定番。' },
+  { name:'ブロッコリーのサラダ', emoji:'🥦', main:['ブロッコリー','卵'], sub:['コーン缶','チーズ'], condiments:['マヨネーズ','塩','酢'], desc:'茹でて和えるだけ。ゆで卵と合わせると満足感アップ。' },
+  { name:'白菜の浅漬け', emoji:'🥬', main:['白菜'], sub:['にんじん','きゅうり'], condiments:['塩','酢','砂糖','ごま油'], desc:'白菜を塩でもんで漬けるだけ。白菜大量消費に。' },
+  { name:'アクアパッツァ', emoji:'🐟', main:['鮭','あさり','トマト'], sub:['玉ねぎ','ブロッコリー'], condiments:['オリーブオイル','白ワイン','塩','コンソメ'], desc:'魚介とトマトをオリーブオイルで蒸し煮。見栄えも◎。' },
+  { name:'えびチリ', emoji:'🦐', main:['えび'], sub:['長ねぎ','トマト'], condiments:['豆板醤','ケチャップ','砂糖','酒','鶏ガラスープ','ごま油','片栗粉'], desc:'甘辛のえびチリソースが絶品。ご飯に合う中華料理。' },
+  { name:'筑前煮', emoji:'🍱', main:['にんじん','ごぼう','こんにゃく'], sub:['鶏肉','れんこん','しいたけ','さやいんげん'], condiments:['醤油','みりん','砂糖','酒'], desc:'根菜たっぷりの和食の定番。作り置きにも最適。' },
+  { name:'ピーマンの肉詰め', emoji:'🫑', main:['ピーマン','ひき肉'], sub:['玉ねぎ','卵'], condiments:['醤油','みりん','砂糖','酒','塩','小麦粉'], desc:'ピーマンとひき肉で作る子どもも喜ぶ一品。' },
+  { name:'鮭のムニエル', emoji:'🐟', main:['鮭'], sub:['ブロッコリー','アスパラ'], condiments:['バター','オリーブオイル','塩','小麦粉'], desc:'バターで焼くだけ簡単。鮭の風味が引き立つ洋食。' },
+  { name:'ミネストローネ', emoji:'🥣', main:['トマト缶','玉ねぎ','にんじん','キャベツ'], sub:['じゃがいも','セロリ','豆缶','ベーコン'], condiments:['オリーブオイル','コンソメ','塩','砂糖'], desc:'トマトベースの野菜スープ。野菜大量消費に最適。' },
+  { name:'炊き込みご飯', emoji:'🍚', main:['ご飯','にんじん','きのこ'], sub:['鶏肉','油揚げ','ごぼう','こんにゃく'], condiments:['醤油','みりん','酒','塩','白だし'], desc:'炊飯器に入れて炊くだけ。旬の野菜で作れる。' },
+  { name:'ナムル', emoji:'🥗', main:['もやし','ほうれん草','にんじん'], sub:['小松菜'], condiments:['ごま油','醤油','ごま','塩','鶏ガラスープ'], desc:'茹でて和えるだけ。副菜に便利で野菜消費に。' },
+  { name:'豚キムチ', emoji:'🌶️', main:['豚肉','キャベツ'], sub:['もやし','ニラ','長ねぎ'], condiments:['醤油','ごま油','酒','砂糖'], desc:'キムチと豚肉で旨みたっぷり。ご飯がすすむ一品。' },
+  { name:'茶碗蒸し', emoji:'🍮', main:['卵'], sub:['きのこ','えび','鶏肉'], condiments:['白だし','醤油','みりん','塩'], desc:'卵と出汁で作るやさしい蒸し料理。体調悪い日にも。' },
+  { name:'かき玉汁', emoji:'🍵', main:['卵','長ねぎ'], sub:['豆腐','わかめ'], condiments:['白だし','醤油','塩','片栗粉'], desc:'溶き卵をスープに流し入れるだけ。手軽に作れる汁物。' },
+  { name:'アボカドの醤油漬け', emoji:'🥑', main:['アボカド'], sub:[], condiments:['醤油','みりん','ごま油','ごま'], desc:'アボカドを醤油ベースのタレで漬ける。ご飯に合う副菜。' },
+  { name:'塩焼きそば', emoji:'🍜', main:['もやし','キャベツ'], sub:['豚肉','ニラ','長ねぎ'], condiments:['ごま油','塩','鶏ガラスープ','醤油'], desc:'塩ベースのさっぱり焼きそば。野菜消費に最適。' },
+  { name:'春雨サラダ', emoji:'🥗', main:['春雨','にんじん','きゅうり'], sub:['ハム','卵'], condiments:['醤油','酢','砂糖','ごま油','ごま'], desc:'春雨と野菜の中華風サラダ。さっぱりして食べやすい。' },
+];
+
+// ── ALIAS MAP（食材名の表記ゆれ対応）────────────────
+const ALIASES = {
+  '鶏肉':['鶏もも','鶏むね','鶏ささみ','チキン','とり肉','鳥肉'],
+  '豚肉':['豚バラ','豚こま','豚ロース','ポーク'],
+  '牛肉':['牛バラ','牛こま','ビーフ'],
+  'ひき肉':['合いびき','鶏ひき','豚ひき','牛ひき','ミンチ'],
+  'きのこ':['しいたけ','しめじ','えのき','まいたけ','マッシュルーム','エリンギ'],
+  'ほうれん草':['ほうれんそう','ホウレンソウ'],
+  '小松菜':['コマツナ'],
+  '長ねぎ':['ネギ','葱','ねぎ','青ねぎ'],
+  '玉ねぎ':['タマネギ','onion'],
+  'じゃがいも':['ジャガイモ','馬鈴薯','メークイン','男爵'],
+  'にんじん':['ニンジン','人参'],
+  'キャベツ':['cabbage','きゃべつ'],
+  '豆腐':['木綿豆腐','絹豆腐','絹ごし豆腐'],
+  '醤油':['しょうゆ','しょう油','soy sauce'],
+  '味噌':['みそ','合わせみそ','白みそ','赤みそ'],
+  'ごま油':['胡麻油','セサミオイル'],
+  'オリーブオイル':['オリーブ油','olive oil'],
+  'サバ缶':['さば缶','鯖缶','サバの水煮','サバの味噌煮缶'],
+  'ツナ缶':['ツナ','シーチキン','まぐろ缶'],
+  'トマト缶':['ホールトマト','カットトマト','トマトピューレ'],
+  '豆缶':['大豆缶','ミックスビーンズ'],
+  'えび':['エビ','海老','むきえび'],
+  'あさり':['アサリ','浅蜊'],
+};
+
+function normalizeIngredient(name) {
+  const n = name.trim();
+  for (const [canonical, aliases] of Object.entries(ALIASES)) {
+    if (aliases.some(a => n.includes(a) || a.includes(n))) return canonical;
+    if (n.includes(canonical) || canonical.includes(n)) return canonical;
+  }
+  return n;
+}
+
+function ingredientMatches(itemName, recipeIng) {
+  const norm = normalizeIngredient(itemName);
+  const normIng = normalizeIngredient(recipeIng);
+  return norm === normIng ||
+    norm.includes(normIng) || normIng.includes(norm) ||
+    itemName.includes(recipeIng) || recipeIng.includes(itemName);
+}
+
+// ── STATE ─────────────────────────────────────────────
+let items = JSON.parse(localStorage.getItem('expiryItems2') || 'null') ||
+            JSON.parse(localStorage.getItem('expiryItems') || '[]');
 let selectedId = null;
 let currentExpiryType = 'date';
+let selectedCat = 'veggie';
+let recipeFilter = 'all';
 
-function save() { localStorage.setItem('expiryItems', JSON.stringify(items)); }
+function save() { localStorage.setItem('expiryItems2', JSON.stringify(items)); }
 
-function today() {
-  const d = new Date(); d.setHours(0,0,0,0); return d;
-}
+function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
 
 function expiryDate(item) {
   if (item.expiryType === 'month') {
-    // 月末を期限とする
     const [y, m] = item.expiry.split('-').map(Number);
-    return new Date(y, m, 0); // 月末日
+    return new Date(y, m, 0);
   }
   const [y, m, d] = item.expiry.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 
 function daysLeft(item) {
-  const diff = expiryDate(item) - today();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return Math.ceil((expiryDate(item) - today()) / 86400000);
 }
 
 function colorClass(days) {
-  if (days < 0) return 'red';
   if (days <= 3) return 'red';
   if (days <= 7) return 'orange';
   if (days <= 14) return 'yellow';
@@ -313,7 +394,79 @@ function formatExpiry(item) {
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
 
+function catInfo(id) { return CATEGORIES.find(c => c.id === id) || CATEGORIES[4]; }
+
+// ── NOTIFICATIONS ─────────────────────────────────────
+async function toggleNotification() {
+  if (!('Notification' in window)) { showToast('このブラウザは通知非対応です'); return; }
+  if (Notification.permission === 'granted') {
+    showToast('通知はすでに有効です');
+    return;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm === 'granted') {
+    document.getElementById('notifBtn').classList.add('on');
+    document.getElementById('notifBtn').textContent = '🔔 通知ON';
+    showToast('通知を有効にしました！');
+    checkAndNotify();
+  } else {
+    showToast('通知が拒否されました');
+  }
+}
+
+function checkAndNotify() {
+  if (Notification.permission !== 'granted') return;
+  const lastCheck = localStorage.getItem('lastNotifDate');
+  const todayStr = new Date().toDateString();
+  if (lastCheck === todayStr) return; // 1日1回だけ
+  localStorage.setItem('lastNotifDate', todayStr);
+
+  const expired = items.filter(i => daysLeft(i) < 0);
+  const day1    = items.filter(i => daysLeft(i) === 1);
+  const day5    = items.filter(i => daysLeft(i) === 5);
+  const day10   = items.filter(i => daysLeft(i) === 10);
+
+  const notify = (title, body) => {
+    new Notification(title, { body, icon: './icon-192.png', badge: './icon-192.png' });
+  };
+
+  if (expired.length) notify('⚠️ 期限切れがあります', expired.map(i=>i.name).join('、') + ' が期限切れです');
+  if (day1.length)    notify('🚨 明日で期限切れ！', day1.map(i=>i.name).join('、') + ' が明日で期限切れになります');
+  if (day5.length)    notify('⏰ 5日以内に期限切れ', day5.map(i=>i.name).join('、') + ' があと5日で期限切れです');
+  if (day10.length)   notify('📅 10日後に期限切れ', day10.map(i=>i.name).join('、') + ' があと10日で期限切れです');
+}
+
+function updateNotifBtn() {
+  const btn = document.getElementById('notifBtn');
+  if (Notification.permission === 'granted') {
+    btn.textContent = '🔔 通知ON';
+    btn.classList.add('on');
+  } else {
+    btn.textContent = '🔔 通知';
+    btn.classList.remove('on');
+  }
+}
+
 // ── ADD ───────────────────────────────────────────────
+function buildCatRow() {
+  document.getElementById('catRow').innerHTML = CATEGORIES.map(c =>
+    `<div class="cat-btn ${c.id === selectedCat ? 'active' : ''}" onclick="selectCat('${c.id}')">${c.label}</div>`
+  ).join('');
+}
+
+function selectCat(id) {
+  selectedCat = id;
+  buildCatRow();
+  buildQuickButtons();
+}
+
+function buildQuickButtons() {
+  const items_q = QUICK_ITEMS[selectedCat] || [];
+  document.getElementById('quickButtons').innerHTML = items_q.map(name =>
+    `<div onclick="quickName('${name}')" style="padding:8px 14px;background:#f1f5f9;border-radius:20px;font-size:14px;cursor:pointer;">${name}</div>`
+  ).join('');
+}
+
 function setExpiryType(t) {
   currentExpiryType = t;
   document.getElementById('typeDate').classList.toggle('active', t === 'date');
@@ -324,44 +477,29 @@ function setExpiryType(t) {
 
 function quickName(name) {
   document.getElementById('foodName').value = name;
-  // 今日の日付をデフォルト設定
-  const now = new Date();
-  document.getElementById('expYear').value = now.getFullYear();
-  document.getElementById('expYear2').value = now.getFullYear();
-  document.getElementById('expMonth').value = now.getMonth() + 1;
-  document.getElementById('expMonth2').value = now.getMonth() + 1;
-  document.getElementById('expDay').value = '';
   document.getElementById('foodName').focus();
 }
 
 function addItem() {
   const name = document.getElementById('foodName').value.trim();
-  if (!name) { showToast('食材名を入力してください'); return; }
-
+  if (!name) { showToast('名前を入力してください'); return; }
   let expiry;
   if (currentExpiryType === 'date') {
     const y = document.getElementById('expYear').value;
-    const m = String(document.getElementById('expMonth').value).padStart(2, '0');
-    const d = String(document.getElementById('expDay').value).padStart(2, '0');
+    const m = String(document.getElementById('expMonth').value).padStart(2,'0');
+    const d = String(document.getElementById('expDay').value).padStart(2,'0');
     if (!y || !m || !d) { showToast('年月日を入力してください'); return; }
     expiry = `${y}-${m}-${d}`;
   } else {
     const y = document.getElementById('expYear2').value;
-    const m = String(document.getElementById('expMonth2').value).padStart(2, '0');
+    const m = String(document.getElementById('expMonth2').value).padStart(2,'0');
     if (!y || !m) { showToast('年月を入力してください'); return; }
     expiry = `${y}-${m}`;
   }
-
-  items.push({ id: uid(), name, expiry, expiryType: currentExpiryType, addedAt: Date.now() });
+  items.push({ id: uid(), name, expiry, expiryType: currentExpiryType, category: selectedCat, addedAt: Date.now() });
   save(); render();
-
   document.getElementById('foodName').value = '';
-  document.getElementById('expYear').value = '';
-  document.getElementById('expMonth').value = '';
-  document.getElementById('expDay').value = '';
-  document.getElementById('expYear2').value = '';
-  document.getElementById('expMonth2').value = '';
-
+  ['expYear','expMonth','expDay','expYear2','expMonth2'].forEach(id => { document.getElementById(id).value = ''; });
   showToast(`「${name}」を追加しました`);
   switchTab('gantt');
 }
@@ -372,7 +510,7 @@ function openModal(id) {
   const item = items.find(i => i.id === id);
   if (!item) return;
   document.getElementById('modalTitle').textContent = item.name;
-  document.getElementById('modalExpiry').textContent = formatExpiry(item) + '　' + daysLabel(daysLeft(item));
+  document.getElementById('modalSub').textContent = formatExpiry(item) + '　' + daysLabel(daysLeft(item));
   document.getElementById('modalOverlay').classList.add('open');
 }
 
@@ -387,8 +525,7 @@ function markDone() {
   const item = items.find(i => i.id === selectedId);
   if (!item) return;
   items = items.filter(i => i.id !== selectedId);
-  save(); render();
-  closeModal();
+  save(); render(); closeModal();
   showToast(`「${item.name}」を消費しました 🎉`);
 }
 
@@ -396,179 +533,175 @@ function deleteItem() {
   const item = items.find(i => i.id === selectedId);
   if (!item) return;
   items = items.filter(i => i.id !== selectedId);
-  save(); render();
-  closeModal();
+  save(); render(); closeModal();
   showToast(`「${item.name}」を削除しました`);
 }
 
 // ── RENDER ────────────────────────────────────────────
 function render() {
+  renderAlerts();
   renderSummary();
   renderGantt();
   renderList();
   renderRecipes();
-
   const total = items.length;
   document.getElementById('headerSub').textContent =
-    total === 0 ? '食材を追加しましょう' : `管理中の食材: ${total}品`;
+    total === 0 ? '食材を追加しましょう' : `管理中: ${total}品`;
+  updateNotifBtn();
+}
+
+function renderAlerts() {
+  const expired = items.filter(i => daysLeft(i) < 0);
+  const urgent  = items.filter(i => { const d = daysLeft(i); return d >= 0 && d <= 3; });
+  let html = '';
+  if (expired.length) html += `<div class="alert-banner expired"><div class="alert-banner-title">⚠️ 期限切れ ${expired.length}品</div><div class="alert-item">${expired.map(i=>i.name).join('、')}</div></div>`;
+  if (urgent.length)  html += `<div class="alert-banner urgent"><div class="alert-banner-title">🚨 3日以内に期限切れ ${urgent.length}品</div><div class="alert-item">${urgent.map(i=>`${i.name}（${daysLabel(daysLeft(i))}）`).join('、')}</div></div>`;
+  document.getElementById('alertBanners').innerHTML = html;
 }
 
 function renderSummary() {
   const expired = items.filter(i => daysLeft(i) < 0).length;
-  const urgent = items.filter(i => { const d = daysLeft(i); return d >= 0 && d <= 3; }).length;
-  const soon = items.filter(i => { const d = daysLeft(i); return d > 3 && d <= 7; }).length;
-  const ok = items.filter(i => daysLeft(i) > 7).length;
-
-  document.getElementById('summary').innerHTML = `
-    ${expired > 0 ? `<div class="badge badge-red"><span class="badge-num">${expired}</span>期限切れ</div>` : ''}
-    ${urgent > 0 ? `<div class="badge badge-red"><span class="badge-num">${urgent}</span>3日以内</div>` : ''}
-    ${soon > 0 ? `<div class="badge badge-orange"><span class="badge-num">${soon}</span>1週間以内</div>` : ''}
-    ${ok > 0 ? `<div class="badge badge-green"><span class="badge-num">${ok}</span>余裕あり</div>` : ''}
-    ${items.length === 0 ? '<div class="badge" style="background:#f1f5f9;color:var(--muted);">食材なし</div>' : ''}
-  `;
+  const urgent  = items.filter(i => { const d = daysLeft(i); return d >= 0 && d <= 3; }).length;
+  const soon    = items.filter(i => { const d = daysLeft(i); return d > 3 && d <= 7; }).length;
+  const ok      = items.filter(i => daysLeft(i) > 7).length;
+  document.getElementById('summary').innerHTML = [
+    expired ? `<div class="badge badge-red"><span class="badge-num">${expired}</span>期限切れ</div>` : '',
+    urgent  ? `<div class="badge badge-red"><span class="badge-num">${urgent}</span>3日以内</div>` : '',
+    soon    ? `<div class="badge badge-orange"><span class="badge-num">${soon}</span>1週間以内</div>` : '',
+    ok      ? `<div class="badge badge-green"><span class="badge-num">${ok}</span>余裕あり</div>` : '',
+    !items.length ? '<div class="badge" style="background:#f1f5f9;color:var(--muted);">食材なし</div>' : '',
+  ].join('');
 }
 
 function renderGantt() {
-  if (items.length === 0) {
-    document.getElementById('ganttContent').innerHTML = `
-      <div class="empty-state">
-        <div class="icon">🛒</div>
-        <p>まだ食材が登録されていません<br>「追加」タブから食材を登録しましょう</p>
-      </div>`;
+  if (!items.length) {
+    document.getElementById('ganttContent').innerHTML = `<div class="empty-state"><div class="icon">🛒</div><p>まだ食材が登録されていません<br>「追加」タブから登録しましょう</p></div>`;
     return;
   }
-
-  const sorted = [...items].sort((a, b) => daysLeft(a) - daysLeft(b));
+  const sorted = [...items].sort((a,b) => daysLeft(a) - daysLeft(b));
   const maxDays = Math.max(...sorted.map(i => Math.max(daysLeft(i), 1)), 14);
   const chartMax = Math.min(maxDays + 3, 60);
-
-  // Axis labels
-  const axisSteps = [0, Math.round(chartMax * 0.25), Math.round(chartMax * 0.5), Math.round(chartMax * 0.75), chartMax];
-  const axisHtml = axisSteps.map(d => `<div class="gantt-axis-label">+${d}日</div>`).join('');
-
+  const steps = [0, Math.round(chartMax*.25), Math.round(chartMax*.5), Math.round(chartMax*.75), chartMax];
+  const axisHtml = steps.map(d => `<div class="gantt-axis-label">+${d}日</div>`).join('');
   const rowsHtml = sorted.map(item => {
     const days = daysLeft(item);
-    const cls = colorClass(days);
-    const pct = Math.min(Math.max(days / chartMax * 100, 2), 100);
+    const cls  = colorClass(days);
+    const pct  = Math.min(Math.max(days / chartMax * 100, 2), 100);
+    const cat  = catInfo(item.category);
     const label = days >= 3 ? daysLabel(days) : '';
-    return `
-      <div class="gantt-row" onclick="openModal('${item.id}')">
-        <div class="gantt-name" title="${item.name}">${item.name}</div>
-        <div class="gantt-bar-track">
-          <div class="gantt-bar ${cls}" style="width:${pct}%">${label}</div>
-        </div>
-        <div class="gantt-days ${cls}">${daysLabel(days)}</div>
-      </div>`;
+    return `<div class="gantt-row" onclick="openModal('${item.id}')">
+      <div class="gantt-name" title="${item.name}">${item.name}</div>
+      <div class="gantt-bar-track"><div class="gantt-bar ${cls}" style="width:${pct}%">${label}</div></div>
+      <div class="gantt-days ${cls}">${daysLabel(days)}</div>
+      <div class="gantt-cat-dot" style="background:${cat.color};"></div>
+    </div>`;
   }).join('');
-
-  document.getElementById('ganttContent').innerHTML = `
-    <div class="gantt-axis">${axisHtml}</div>
-    ${rowsHtml}`;
+  document.getElementById('ganttContent').innerHTML = `<div class="gantt-axis">${axisHtml}</div>${rowsHtml}`;
 }
 
 function renderList() {
-  if (items.length === 0) {
-    document.getElementById('itemList').innerHTML = `
-      <div class="empty-state">
-        <div class="icon">🥗</div>
-        <p>食材がありません</p>
-      </div>`;
+  if (!items.length) {
+    document.getElementById('itemList').innerHTML = `<div class="empty-state"><div class="icon">🥗</div><p>食材がありません</p></div>`;
     return;
   }
-
-  const sorted = [...items].sort((a, b) => daysLeft(a) - daysLeft(b));
+  const sorted = [...items].sort((a,b) => daysLeft(a) - daysLeft(b));
   document.getElementById('itemList').innerHTML = sorted.map(item => {
     const days = daysLeft(item);
-    const cls = colorClass(days);
-    return `
-      <div class="item-card ${cls}" onclick="openModal('${item.id}')">
-        <div class="item-info">
-          <div class="item-name">${item.name}</div>
-          <div class="item-expiry">${formatExpiry(item)}</div>
-        </div>
-        <div>
-          <div class="item-days ${cls}">${daysLabel(days)}</div>
-        </div>
-        <div class="check-btn">✓</div>
-      </div>`;
+    const cls  = colorClass(days);
+    const cat  = catInfo(item.category);
+    return `<div class="item-card ${cls}" onclick="openModal('${item.id}')">
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-expiry">${formatExpiry(item)}</div>
+        <span class="item-cat-badge" style="background:${cat.bg};color:${cat.color}">${cat.label}</span>
+      </div>
+      <div><div class="item-days ${cls}">${daysLabel(days)}</div></div>
+      <div class="check-btn">✓</div>
+    </div>`;
   }).join('');
 }
 
 // ── RECIPES ───────────────────────────────────────────
-const RECIPES = [
-  { name: '野菜炒め', ingredients: ['キャベツ', 'もやし', 'にんじん', '豚肉', '鶏肉', 'ピーマン', '玉ねぎ'], desc: '冷蔵庫の野菜をまとめて消費できる万能レシピ。ごま油と醤油で炒めるだけ。', emoji: '🥘' },
-  { name: '肉じゃが', ingredients: ['じゃがいも', 'にんじん', '玉ねぎ', '牛肉', '豚肉'], desc: '定番の煮物。醤油・みりん・砂糖で甘辛に仕上げます。', emoji: '🍲' },
-  { name: 'カレーライス', ingredients: ['じゃがいも', 'にんじん', '玉ねぎ', '鶏肉', '豚肉', '牛肉'], desc: '作り置きにも最適。野菜たっぷりで栄養満点。', emoji: '🍛' },
-  { name: 'お味噌汁', ingredients: ['豆腐', '豆腐', 'なす', 'きのこ', 'ほうれん草', '大根', 'もやし'], desc: '余り野菜を入れるだけで栄養たっぷりの一品に。', emoji: '🍵' },
-  { name: '卵炒飯', ingredients: ['卵', 'ご飯', '長ねぎ', 'ベーコン', 'ハム'], desc: '卵と余りご飯で手軽に作れる炒飯。冷蔵庫の整理に最適。', emoji: '🍳' },
-  { name: 'ほうれん草のお浸し', ingredients: ['ほうれん草'], desc: '茹でて醤油と鰹節をかけるだけ。ほうれん草を大量消費できます。', emoji: '🌿' },
-  { name: 'ポトフ', ingredients: ['じゃがいも', 'にんじん', '玉ねぎ', 'キャベツ', 'ソーセージ', '豚肉'], desc: '大きく切った野菜をコンソメで煮込むだけ。体温まる一品。', emoji: '🫕' },
-  { name: 'チャンプルー', ingredients: ['豆腐', '卵', 'もやし', 'ニラ', 'キャベツ', 'ツナ'], desc: '豆腐と野菜を炒めるゴーヤチャンプルー風。豆腐消費に最適。', emoji: '🥗' },
-  { name: '豚汁', ingredients: ['にんじん', '大根', '豚肉', 'じゃがいも', '玉ねぎ', 'ごぼう', '豆腐'], desc: '根菜と豚肉の味噌汁。体が温まる冬の定番。', emoji: '🍲' },
-  { name: 'オムレツ', ingredients: ['卵', '牛乳', 'ほうれん草', 'キャベツ', 'ベーコン'], desc: '卵と牛乳で作る簡単オムレツ。好きな具材を入れて。', emoji: '🍳' },
-  { name: '鶏のから揚げ', ingredients: ['鶏肉', 'にんにく', '生姜'], desc: '醤油・みりん・ニンニク・生姜で下味をつけて揚げるだけ。', emoji: '🍗' },
-  { name: 'ナポリタン', ingredients: ['玉ねぎ', 'ピーマン', 'ベーコン', 'ソーセージ', 'にんじん'], desc: 'ケチャップベースのパスタ。余り野菜をどんどん入れて。', emoji: '🍝' },
-  { name: 'きのこのパスタ', ingredients: ['きのこ', 'にんにく', 'ベーコン'], desc: 'きのこをバターとニンニクで炒めたシンプルなパスタ。', emoji: '🍝' },
-  { name: '豆腐ステーキ', ingredients: ['豆腐', 'きのこ'], desc: '豆腐を焼いて和風ソースをかけるだけ。ヘルシーな一品。', emoji: '🍱' },
-  { name: 'コールスロー', ingredients: ['キャベツ', 'にんじん'], desc: 'キャベツとにんじんをマヨネーズで和える。サラダとして大量消費に。', emoji: '🥗' },
-  { name: '豚バラ大根', ingredients: ['大根', '豚肉'], desc: '大根と豚肉を醤油・みりんで煮込む。大根の消費に。', emoji: '🍲' },
-  { name: '親子丼', ingredients: ['鶏肉', '卵', '玉ねぎ'], desc: '鶏肉と卵でつくる定番丼。甘辛だれがご飯に合う。', emoji: '🍜' },
-  { name: 'ハッシュドポテト', ingredients: ['じゃがいも'], desc: 'じゃがいもをすりおろして焼くだけ。じゃがいも消費に最適。', emoji: '🥔' },
-  { name: 'スープカレー', ingredients: ['じゃがいも', 'にんじん', '玉ねぎ', '鶏肉', 'なす', 'ピーマン'], desc: '野菜を素揚げしてカレースープに。野菜の大量消費に。', emoji: '🍛' },
-  { name: 'にんじんしりしり', ingredients: ['にんじん', '卵', 'ツナ'], desc: '沖縄料理。にんじんを千切りにして炒める。にんじん消費に。', emoji: '🥕' },
-];
+function scoreRecipe(recipe, myItems) {
+  let score = 0;
+  const matchedMain = [], matchedSub = [], matchedCond = [], missingMain = [];
+  for (const ing of recipe.main) {
+    const hit = myItems.find(i => ingredientMatches(i.name, ing));
+    if (hit) { score += 2; matchedMain.push({ ing, item: hit }); }
+    else missingMain.push(ing);
+  }
+  for (const ing of recipe.sub) {
+    if (myItems.find(i => ingredientMatches(i.name, ing))) { score += 1; matchedSub.push(ing); }
+  }
+  for (const ing of (recipe.condiments || [])) {
+    if (myItems.find(i => i.category === 'condiment' && ingredientMatches(i.name, ing))) { score += 0.5; matchedCond.push(ing); }
+  }
+  return { score, matchedMain, matchedSub, matchedCond, missingMain };
+}
 
 function renderRecipes() {
-  const names = items.map(i => i.name);
-  if (names.length === 0) {
-    document.getElementById('recipeList').innerHTML = `
-      <div class="empty-state">
-        <div class="icon">👨‍🍳</div>
-        <p>食材を登録するとレシピを提案します</p>
-      </div>`;
+  const filterBtns = [
+    { id: 'all', label: '🍽 全部' },
+    { id: 'veggie', label: '🥦 野菜メイン' },
+    { id: 'meat', label: '🥩 肉・魚' },
+    { id: 'quick', label: '⚡ 手軽に' },
+  ];
+  document.getElementById('recipeFilter').innerHTML = filterBtns.map(f =>
+    `<div class="filter-btn ${recipeFilter===f.id?'active':''}" onclick="setRecipeFilter('${f.id}')">${f.label}</div>`
+  ).join('');
+
+  if (!items.length) {
+    document.getElementById('recipeList').innerHTML = `<div class="empty-state"><div class="icon">👨‍🍳</div><p>食材を登録するとレシピを提案します</p></div>`;
+    document.getElementById('recipeHint').textContent = '🧑‍🍳 今ある食材から作れるレシピを提案します。';
     return;
   }
 
-  const scored = RECIPES.map(recipe => {
-    const matched = recipe.ingredients.filter(ing =>
-      names.some(n => n.includes(ing) || ing.includes(n))
-    );
-    return { ...recipe, matched, score: matched.length };
-  }).filter(r => r.score > 0).sort((a, b) => b.score - a.score);
+  let recipes = RECIPES;
+  if (recipeFilter === 'veggie') recipes = recipes.filter(r => r.main.some(i => QUICK_ITEMS.veggie.includes(i)));
+  if (recipeFilter === 'meat')   recipes = recipes.filter(r => r.main.some(i => QUICK_ITEMS.meat.includes(i)));
+  if (recipeFilter === 'quick')  recipes = recipes.filter(r => r.main.length <= 2);
 
-  if (scored.length === 0) {
-    document.getElementById('recipeList').innerHTML = `
-      <div class="empty-state">
-        <div class="icon">🤔</div>
-        <p>マッチするレシピが見つかりませんでした<br>食材を追加するとレシピが増えます</p>
-      </div>`;
+  const scored = recipes
+    .map(r => ({ ...r, ...scoreRecipe(r, items) }))
+    .filter(r => r.score > 0)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 15);
+
+  if (!scored.length) {
+    document.getElementById('recipeList').innerHTML = `<div class="empty-state"><div class="icon">🤔</div><p>マッチするレシピが見つかりませんでした<br>食材を追加するとレシピが増えます</p></div>`;
     return;
   }
+
+  const condCount = items.filter(i => i.category === 'condiment').length;
+  document.getElementById('recipeHint').innerHTML =
+    `🧑‍🍳 今ある食材でマッチしたレシピ <strong>${scored.length}件</strong>。${condCount > 0 ? `<span style="color:#d97706">🧂 調味料${condCount}品も反映済み</span>` : '調味料を登録するとさらに精度アップ！'}`;
 
   document.getElementById('recipeList').innerHTML = scored.map(r => {
-    const allIng = r.ingredients.filter((v, i, a) => a.indexOf(v) === i);
-    const tagsHtml = allIng.map(ing => {
-      const isMatch = r.matched.includes(ing);
-      return `<span class="recipe-tag ${isMatch ? '' : 'missing'}">${isMatch ? '✓' : ''} ${ing}</span>`;
-    }).join('');
-    return `
-      <div class="recipe-card">
-        <div class="recipe-name">${r.emoji} ${r.name} <span class="recipe-score">${r.score}品一致</span></div>
-        <div class="recipe-match">${tagsHtml}</div>
-        <div class="recipe-desc">${r.desc}</div>
-      </div>`;
+    const mainTags = r.matchedMain.map(m => `<span class="recipe-tag">✓ ${m.ing}</span>`).join('');
+    const missTags = r.missingMain.map(m => `<span class="recipe-tag missing">${m}</span>`).join('');
+    const subTags  = r.matchedSub.map(m => `<span class="recipe-tag" style="background:#dbeafe;color:#2563eb">✓ ${m}</span>`).join('');
+    const condTags = r.matchedCond.map(m => `<span class="recipe-tag condiment">🧂 ${m}</span>`).join('');
+    const scoreInt = Math.floor(r.score * 10) / 10;
+    return `<div class="recipe-card">
+      <div class="recipe-name">${r.emoji} ${r.name} <span class="recipe-score">スコア ${scoreInt}</span></div>
+      <div class="recipe-match">${mainTags}${subTags}${condTags}${missTags}</div>
+      <div class="recipe-desc">${r.desc}</div>
+    </div>`;
   }).join('');
+}
+
+function setRecipeFilter(f) {
+  recipeFilter = f;
+  renderRecipes();
 }
 
 // ── NAV ───────────────────────────────────────────────
 function switchTab(tab) {
-  ['gantt', 'list', 'add', 'recipe'].forEach(t => {
-    document.getElementById('section-' + t).classList.toggle('active', t === tab);
-    document.getElementById('nav-' + t).classList.toggle('active', t === tab);
+  ['gantt','list','add','recipe'].forEach(t => {
+    document.getElementById('section-'+t).classList.toggle('active', t===tab);
+    document.getElementById('nav-'+t).classList.toggle('active', t===tab);
   });
-  if (tab === 'add') {
-    setTimeout(() => document.getElementById('foodName').focus(), 100);
-  }
+  if (tab === 'add') setTimeout(() => document.getElementById('foodName').focus(), 100);
 }
 
 // ── TOAST ─────────────────────────────────────────────
@@ -579,26 +712,33 @@ function showToast(msg) {
   setTimeout(() => el.classList.remove('show'), 2500);
 }
 
+// ── PWA: Service Worker ───────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
 // ── INIT ──────────────────────────────────────────────
-// サンプルデータ（初回のみ）
-if (items.length === 0) {
+buildCatRow();
+buildQuickButtons();
+
+if (!items.length) {
+  const d = (n) => { const dt = new Date(); dt.setDate(dt.getDate()+n); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
   const now = new Date();
-  const d = (offset) => {
-    const dt = new Date(now); dt.setDate(dt.getDate() + offset);
-    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
-  };
   items = [
-    { id: uid(), name: '牛乳', expiry: d(2), expiryType: 'date', addedAt: Date.now() },
-    { id: uid(), name: '卵', expiry: d(10), expiryType: 'date', addedAt: Date.now() },
-    { id: uid(), name: 'キャベツ', expiry: d(5), expiryType: 'date', addedAt: Date.now() },
-    { id: uid(), name: 'にんじん', expiry: `${now.getFullYear()}-${String(now.getMonth()+2).padStart(2,'0')}`, expiryType: 'month', addedAt: Date.now() },
-    { id: uid(), name: 'じゃがいも', expiry: d(20), expiryType: 'date', addedAt: Date.now() },
+    { id:uid(), name:'牛乳',     expiry:d(2),  expiryType:'date',  category:'dairy',     addedAt:Date.now() },
+    { id:uid(), name:'卵',       expiry:d(10), expiryType:'date',  category:'dairy',     addedAt:Date.now() },
+    { id:uid(), name:'キャベツ', expiry:d(5),  expiryType:'date',  category:'veggie',    addedAt:Date.now() },
+    { id:uid(), name:'にんじん', expiry:`${now.getFullYear()}-${String(now.getMonth()+2).padStart(2,'0')}`, expiryType:'month', category:'veggie', addedAt:Date.now() },
+    { id:uid(), name:'醤油',     expiry:d(180),expiryType:'date',  category:'condiment', addedAt:Date.now() },
+    { id:uid(), name:'みりん',   expiry:d(365),expiryType:'date',  category:'condiment', addedAt:Date.now() },
   ];
   save();
-  showToast('サンプルデータを表示中です');
 }
 
 render();
+
+// アプリを開いたとき通知チェック
+setTimeout(checkAndNotify, 1000);
 </script>
 </body>
 </html>
